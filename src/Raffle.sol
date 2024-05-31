@@ -1,36 +1,13 @@
-// Layout of Contract:
-// version
-// imports
-// errors
-// interfaces, libraries, contracts
-// Type declarations
-// State variables
-// Events
-// Modifiers
-// Functions
-
-// Layout of Functions:
-// constructor
-// receive function (if exists)
-// fallback function (if exists)
-// external
-// public
-// internal
-// private
-// view & pure functions
-
-// SPDX-License-Identifier: MIT
-
 pragma solidity ^0.8.19;
 
 import {VRFCoordinatorV2Interface} from "@chainlink/contracts/src/v0.8/interfaces/VRFCoordinatorV2Interface.sol";
 import {VRFConsumerBaseV2} from "@chainlink/contracts/src/v0.8/VRFConsumerBaseV2.sol";
 import {AutomationCompatibleInterface} from "@chainlink/contracts/src/v0.8/interfaces/AutomationCompatibleInterface.sol";
 
-/**@title A sample Raffle Contract
- * @author Patrick Collins
- * @notice This contract is for creating a sample raffle contract
- * @dev This implements the Chainlink VRF Version 2
+/**@title lottery system interface
+ * @author Emmanuel Mumo
+ * @notice
+ * @dev
  */
 contract Raffle is VRFConsumerBaseV2, AutomationCompatibleInterface {
     /* Errors */
@@ -43,15 +20,13 @@ contract Raffle is VRFConsumerBaseV2, AutomationCompatibleInterface {
     error Raffle__SendMoreToEnterRaffle();
     error Raffle__RaffleNotOpen();
 
-    /* Type declarations */
     enum RaffleState {
         OPEN,
         CALCULATING
     }
-    /* State variables */
-    // Chainlink VRF Variables
+
     VRFCoordinatorV2Interface private immutable i_vrfCoordinator;
-// NOTE! As of newer versions of Chainlink, the subscription id is a uint256 instead of a uint64
+
     uint64 private immutable i_subscriptionId;
     bytes32 private immutable i_gasLane;
     uint32 private immutable i_callbackGasLimit;
@@ -95,8 +70,6 @@ contract Raffle is VRFConsumerBaseV2, AutomationCompatibleInterface {
     }
 
     function enterRaffle() public payable {
-        // require(msg.value >= i_entranceFee, "Not enough value sent");
-        // require(s_raffleState == RaffleState.OPEN, "Raffle is not open");
         if (msg.value < i_entranceFee) {
             revert Raffle__SendMoreToEnterRaffle();
         }
@@ -110,22 +83,11 @@ contract Raffle is VRFConsumerBaseV2, AutomationCompatibleInterface {
     }
 
     /**
-     * @dev This is the function that the Chainlink Keeper nodes call
-     * they look for `upkeepNeeded` to return True.
-     * the following should be true for this to return true:
-     * 1. The time interval has passed between raffle runs.
-     * 2. The lottery is open.
-     * 3. The contract has ETH.
-     * 4. Implicity, your subscription is funded with LINK.
+     * @dev
      */
     function checkUpkeep(
         bytes memory /* checkData */
-    )
-        public
-        view
-        override
-        returns (bool upkeepNeeded, bytes memory /* performData */)
-    {
+    ) public view override returns (bool upkeepNeeded, bytes memory) {
         bool isOpen = RaffleState.OPEN == s_raffleState;
         bool timePassed = ((block.timestamp - s_lastTimeStamp) > i_interval);
         bool hasPlayers = s_players.length > 0;
@@ -135,9 +97,7 @@ contract Raffle is VRFConsumerBaseV2, AutomationCompatibleInterface {
     }
 
     /**
-     * @dev Once `checkUpkeep` is returning `true`, this function is called
-     * and it kicks off a Chainlink VRF call to get a random winner.
-     */
+     * @dev */
     function performUpkeep(bytes calldata /* performData */) external override {
         (bool upkeepNeeded, ) = checkUpkeep("");
         // require(upkeepNeeded, "Upkeep not needed");
@@ -168,12 +128,6 @@ contract Raffle is VRFConsumerBaseV2, AutomationCompatibleInterface {
         uint256 /* requestId */,
         uint256[] memory randomWords
     ) internal override {
-        // s_players size 10
-        // randomNumber 202
-        // 202 % 10 ? what's doesn't divide evenly into 202?
-        // 20 * 10 = 200
-        // 2
-        // 202 % 10 = 2
         uint256 indexOfWinner = randomWords[0] % s_players.length;
         address payable recentWinner = s_players[indexOfWinner];
         s_recentWinner = recentWinner;
